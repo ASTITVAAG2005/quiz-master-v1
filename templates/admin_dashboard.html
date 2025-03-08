@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Quiz Master</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Admin Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-4">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <strong>{{ message }}</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="container mt-4">
+        <h2>Welcome, Admin</h2>
+        
+       <!-- Manage Subjects -->
+<div class="card mt-3">
+    <div class="card-header bg-primary text-white">
+        Manage Subjects
+        <button class="btn btn-sm btn-light float-end" data-bs-toggle="modal" data-bs-target="#addSubjectModal">+ Add Subject</button>
+    </div>
+    <div class="card-body">
+        {% if subjects %}
+        <ul class="list-group">
+            {% for subject in subjects %}
+            <li class="list-group-item">
+                <strong>{{ subject.Subjectname }}</strong> - {{ subject.Description }}
+                
+                <!-- Edit Button to trigger modal -->
+                <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editSubjectModal{{ subject.SubjectID }}">Edit</button>
+                
+                <!-- Delete Button -->
+                <a href="{{ url_for('delete_subject', subject_id=subject.SubjectID) }}" class="btn btn-danger btn-sm float-end">Delete</a>
+            </li>
+
+            <!-- Edit Subject Modal -->
+            <div class="modal fade" id="editSubjectModal{{ subject.SubjectID }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Subject</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ url_for('edit_subject', subject_id=subject.SubjectID) }}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label">Subject Name</label>
+                                    <input type="text" class="form-control" name="subject_name" value="{{ subject.Subjectname }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="description" required>{{ subject.Description }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No subjects available.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+
+       <!-- Manage Chapters -->
+<div class="card mt-3">
+    <div class="card-header bg-warning text-dark">
+        Manage Chapters
+        <button class="btn btn-sm btn-light float-end" data-bs-toggle="modal" data-bs-target="#addChapterModal">+ Add Chapter</button>
+    </div>
+    <div class="card-body">
+        {% if chapters %}
+        <ul class="list-group">
+            {% for chapter in chapters %}
+            <li class="list-group-item">
+                <strong>{{ chapter.Chaptername }}</strong> - {{ chapter.Description }}
+                
+                <!-- Edit Button to trigger modal -->
+                <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editChapterModal{{ chapter.ChapterID }}">Edit</button>
+                
+                <!-- Delete Button -->
+                <a href="{{ url_for('delete_chapter', chapter_id=chapter.ChapterID) }}" class="btn btn-danger btn-sm float-end">Delete</a>
+            </li>
+
+            <!-- Edit Chapter Modal -->
+            <div class="modal fade" id="editChapterModal{{ chapter.ChapterID }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Chapter</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ url_for('edit_chapter', chapter_id=chapter.ChapterID) }}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label">Chapter Name</label>
+                                    <input type="text" class="form-control" name="chapter_name" value="{{ chapter.Chaptername }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Description</label>
+                                    <textarea class="form-control" name="description" required>{{ chapter.Description }}</textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No chapters available.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+<!-- Add Chapter Modal -->
+<div class="modal fade" id="addChapterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Chapter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_chapter') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Select Subject</label>
+                        <select class="form-control" name="subject_id" required>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.SubjectID }}">{{ subject.Subjectname }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Chapter Name</label>
+                        <input type="text" class="form-control" name="chapter_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning">Add Chapter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+       <!-- Manage Quizzes -->
+<div class="card mt-3">
+    <div class="card-header bg-info text-dark">
+        Manage Quizzes
+        <button class="btn btn-sm btn-light float-end" data-bs-toggle="modal" data-bs-target="#addQuizModal">+ Add Quiz</button>
+    </div>
+    <div class="card-body">
+        {% if quizzes %}
+        <ul class="list-group">
+            {% for quiz in quizzes %}
+            <li class="list-group-item">
+                <strong>{{ quiz.chapter.Chaptername }}</strong> - Date: {{ quiz.Date_of_quiz }} | Duration: {{ quiz.Time_duration }}
+                
+                <!-- Edit Button to trigger modal -->
+                <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editQuizModal{{ quiz.QuizID }}">Edit</button>
+                
+                <!-- Delete Button -->
+                <a href="{{ url_for('delete_quiz', quiz_id=quiz.QuizID) }}" class="btn btn-danger btn-sm float-end">Delete</a>
+            </li>
+
+            <!-- Edit Quiz Modal -->
+            <div class="modal fade" id="editQuizModal{{ quiz.QuizID }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Edit Quiz</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form action="{{ url_for('edit_quiz', quiz_id=quiz.QuizID) }}" method="POST">
+                                <div class="mb-3">
+                                    <label class="form-label">Date of Quiz</label>
+                                    <input type="date" class="form-control" name="date_of_quiz" value="{{ quiz.Date_of_quiz }}" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Time Duration (HH:MM)</label>
+                                    <input type="text" class="form-control" name="time_duration" value="{{ quiz.Time_duration }}" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p>No quizzes available.</p>
+        {% endif %}
+    </div>
+</div>
+
+
+    <!-- Add Subject Modal -->
+    <div class="modal fade" id="addSubjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Subject</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('add_subject') }}" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Subject Name</label>
+                            <input type="text" class="form-control" name="subject_name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-control" name="description" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Subject</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Quiz Modal -->
+    <div class="modal fade" id="addQuizModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Quiz</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('add_quiz') }}" method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Select Chapter</label>
+                            <select class="form-control" name="chapter_id" required>
+                                {% for chapter in chapters %}
+                                <option value="{{ chapter.ChapterID }}">{{ chapter.Chaptername }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Date of Quiz</label>
+                            <input type="date" class="form-control" name="date_of_quiz" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time Duration (HH:MM)</label>
+                            <input type="text" class="form-control" name="time_duration" required>
+                        </div>
+                        <button type="submit" class="btn btn-info">Add Quiz</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manage Questions -->
+<div class="card mt-3">
+    <div class="card-header bg-warning text-dark">
+        Manage Questions
+        <button class="btn btn-sm btn-light float-end" data-bs-toggle="modal" data-bs-target="#addQuestionModal">+ Add Question</button>
+    </div>
+    <div class="card-body">
+        {% if quizzes %}
+            {% for quiz in quizzes %}
+                <h5>{{ quiz.chapter.Chaptername }} - {{ quiz.Date_of_quiz }}</h5>
+                <ul class="list-group">
+                    {% for question in quiz.QuestionsR %}
+                        <li class="list-group-item">
+                            <strong>{{ question.Question_statement }}</strong>
+                            <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editQuestionModal{{ question.QuestionID }}">Edit</button>
+                            <a href="{{ url_for('delete_question', question_id=question.QuestionID) }}" class="btn btn-danger btn-sm float-end">Delete</a>
+                        </li>
+
+                        <!-- Edit Question Modal -->
+                        <div class="modal fade" id="editQuestionModal{{ question.QuestionID }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Edit Question</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form action="{{ url_for('edit_question', question_id=question.QuestionID) }}" method="POST">
+                                            <div class="mb-3">
+                                                <label class="form-label">Question</label>
+                                                <input type="text" class="form-control" name="question_statement" value="{{ question.Question_statement }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Option 1</label>
+                                                <input type="text" class="form-control" name="option1" value="{{ question.Option1 }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Option 2</label>
+                                                <input type="text" class="form-control" name="option2" value="{{ question.Option2 }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Option 3</label>
+                                                <input type="text" class="form-control" name="option3" value="{{ question.Option3 }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Option 4</label>
+                                                <input type="text" class="form-control" name="option4" value="{{ question.Option4 }}" required>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Correct Option</label>
+                                                <select class="form-control" name="correct_option">
+                                                    <option value="{{ question.Option1 }}">{{ question.Option1 }}</option>
+                                                    <option value="{{ question.Option2 }}">{{ question.Option2 }}</option>
+                                                    <option value="{{ question.Option3 }}">{{ question.Option3 }}</option>
+                                                    <option value="{{ question.Option4 }}">{{ question.Option4 }}</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-warning">Update Question</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        {% else %}
+            <p>No quizzes available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Question Modal -->
+<div class="modal fade" id="addQuestionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New Question</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form action="{{ url_for('add_question') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Select Quiz</label>
+                        <select class="form-control" name="quiz_id" required>
+                            {% for quiz in quizzes %}
+                            <option value="{{ quiz.QuizID }}">{{ quiz.chapter.Chaptername }} - {{ quiz.Date_of_quiz }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Question</label>
+                        <input type="text" class="form-control" name="question_statement" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Option 1</label>
+                        <input type="text" class="form-control" name="option1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Option 2</label>
+                        <input type="text" class="form-control" name="option2" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Option 3</label>
+                        <input type="text" class="form-control" name="option3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Option 4</label>
+                        <input type="text" class="form-control" name="option4" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Correct Option</label>
+                        <select class="form-control" name="correct_option">
+                            <option value="1">Option 1</option>
+                            <option value="2">Option 2</option>
+                            <option value="3">Option 3</option>
+                            <option value="4">Option 4</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Question</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+    
+        <!-- Manage Users -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">Registered Users</div>
+            <div class="card-body">
+                {% if users %}
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.Username }}</td>
+                            <td>{{ user.Email }}</td>
+                            <td>{{ user.Role }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No registered users.</p>
+                {% endif %}
+            </div>
+        </div>
+
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
