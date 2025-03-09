@@ -20,111 +20,164 @@
             </div>
         </div>
     </nav>
-
-    <!-- Flash Messages -->
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages() %}
-        {% if messages %}
-        {% for message in messages %}
-        <div class="alert alert-info alert-dismissible fade show" role="alert">
-            <strong>{{ message }}</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-        {% endif %}
-        {% endwith %}
+<!-- Flash Messages (Perfectly Centered, Faster Animation, Auto-Dismiss) -->
+<div class="flash-container">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="flash-message">
+        <strong>{{ message }}</strong>
     </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
 
-    <!-- User Profile Info -->
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">User Profile</h5>
-                        <p><strong>Username:</strong> {{ user.Username }}</p>
-                        <p><strong>Full Name:</strong> {{ user.Fullname }}</p>
-                        <p><strong>Email:</strong> {{ user.Email }}</p>
-                        <p><strong>Qualification:</strong> {{ user.Qualification }}</p>
-                        <p><strong>Date of Birth:</strong> {{ user.DOB }}</p>
+<!-- CSS for Animation & Auto-Dismiss -->
+<style>
+    .flash-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .flash-message {
+        background-color: #28a745;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 15px;
+        width: 300px;
+        text-align: center;
+        position: relative;
+        opacity: 0;
+        animation: slideIn 0.5s ease-out forwards, fadeOut 2    s ease-in-out forwards 2s;
+    }
+
+    /* Faster Slide-In Animation */
+    @keyframes slideIn {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Faster Fade-Out Animation */
+    @keyframes fadeOut {
+        80% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+</style>
+
+
+
+<!-- Upcoming Quizzes Section -->
+<div class="container mt-4">
+    <h5>Upcoming Quizzes</h5>
+    {% if upcoming_quizzes %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Chapter</th>
+                <th>No. of Questions</th>
+                <th>Scheduled Date</th>
+                <th>Duration</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in upcoming_quizzes %}
+            <tr>
+                <td>{{ data.quiz.QuizID }}</td>
+                <td>{{ data.subject.Subjectname }}</td>
+                <td>{{ data.chapter.Chaptername }}</td>
+                <td>{{ data.quiz.QuestionsR|length }}</td>
+                <td>{{ data.quiz.Date_of_quiz }}</td>
+                <td>{{ data.quiz.Time_duration }}</td>
+                <td>
+                    <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewQuiz{{ data.quiz.QuizID }}">View</button>
+                    <a href="{{ url_for('start_quiz', quiz_id=data.quiz.QuizID) }}" class="btn btn-success btn-sm">Start</a>
+                </td>
+            </tr>
+
+            <!-- View Quiz Modal -->
+            <div class="modal fade" id="viewQuiz{{ data.quiz.QuizID }}" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Quiz Details</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p><strong>ID:</strong> {{ data.quiz.QuizID }}</p>
+                            <p><strong>Subject:</strong> {{ data.subject.Subjectname }}</p>
+                            <p><strong>Chapter:</strong> {{ data.chapter.Chaptername }}</p>
+                            <p><strong>No. of Questions:</strong> {{ data.quiz.QuestionsR|length }}</p>
+                            <p><strong>Scheduled Date:</strong> {{ data.quiz.Date_of_quiz }}</p>
+                            <p><strong>Duration:</strong> {{ data.quiz.Time_duration }}</p>
+                        </div>
                     </div>
                 </div>
             </div>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No upcoming quizzes available.</p>
+    {% endif %}
+</div>
 
-            <!-- Available Subjects & Quizzes -->
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">Available Subjects & Quizzes</h5>
-                        {% if subjects %}
-                        <ul class="list-group">
-                            {% for subject in subjects %}
-                            <li class="list-group-item">
-                                <h6>{{ subject.Subjectname }}</h6>
-                                <p>{{ subject.Description }}</p>
-                                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#quizModal{{ subject.SubjectID }}">View Quizzes</button>
-
-                                <!-- Quiz Modal -->
-                                <div class="modal fade" id="quizModal{{ subject.SubjectID }}" tabindex="-1">
-                                    <div class="modal-dialog">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Quizzes for {{ subject.Subjectname }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                {% for quiz in subject.quizzes %}
-                                                <p><strong>Date:</strong> {{ quiz.Date_of_quiz }} | <strong>Duration:</strong> {{ quiz.Time_duration }}</p>
-                                                <a href="{{ url_for('start_quiz', quiz_id=quiz.QuizID) }}" class="btn btn-success">Start Quiz</a>
-                                                <hr>
-                                                {% endfor %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        {% else %}
-                        <p>No subjects available.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
+<!-- Past Quiz Scores -->
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">Your Past Quiz Scores</h5>
+            {% if scores %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Quiz</th>
+                        <th>Chapter</th>
+                        <th>Subject</th>
+                        <th>Date</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for score in scores %}
+                    <tr>
+                        <td>{{ score.quiz.QuizID }}</td>
+                        <td>{{ score.quiz.chapter.Chaptername }}</td>
+                        <td>{{ score.quiz.chapter.subject.Subjectname }}</td>
+                        <td>{{ score.TimeStamp }}</td>
+                        <td>{{ score.TotalScore }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No quiz attempts found.</p>
+            {% endif %}
         </div>
     </div>
+</div>
 
-    <!-- Past Quiz Scores -->
-    <div class="container mt-4">
-        <div class="card">
-            <div class="card-body">
-                <h5 class="card-title">Your Past Quiz Scores</h5>
-                {% if scores %}
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Quiz</th>
-                            <th>Date</th>
-                            <th>Score</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for score in scores %}
-                        <tr>
-                            <td>{{ score.quiz.chapter.Chaptername }}</td>
-                            <td>{{ score.TimeStamp }}</td>
-                            <td>{{ score.TotalScore }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p>No quiz attempts found.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

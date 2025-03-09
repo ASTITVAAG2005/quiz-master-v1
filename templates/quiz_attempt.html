@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attempt Quiz - Quiz Master</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Quiz Master</a>
+            <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2 class="text-center">Quiz: {{ quiz.chapter.Chaptername }}</h2>
+        <p class="text-center"><strong>Time Limit:</strong> {{ quiz.Time_duration }}</p>
+
+        <div class="card">
+            <div class="card-body">
+                <h5 class="text-center">Question {{ current_question }} / {{ total_questions }}</h5>
+                <hr>
+                <h4>{{ question.Question_statement }}</h4>
+                
+                <form method="POST" action="{% if current_question == total_questions %}{{ url_for('submit_quiz', quiz_id=quiz.QuizID) }}{% else %}{{ url_for('save_answer') }}{% endif %}">
+                    <input type="hidden" name="question_id" value="{{ question.QuestionID }}">
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="selected_answer" value="{{ question.Option1 }}" required>
+                        <label class="form-check-label">{{ question.Option1 }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="selected_answer" value="{{ question.Option2 }}">
+                        <label class="form-check-label">{{ question.Option2 }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="selected_answer" value="{{ question.Option3 }}">
+                        <label class="form-check-label">{{ question.Option3 }}</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="selected_answer" value="{{ question.Option4 }}">
+                        <label class="form-check-label">{{ question.Option4 }}</label>
+                    </div>
+
+                    {% if current_question == total_questions %}
+                        <button type="submit" class="btn btn-success mt-3">Submit Quiz</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary mt-3">Save & Next</button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -58,8 +58,11 @@ class Chapter(db.Model):
     ChapterID = db.Column(db.Integer, primary_key=True, autoincrement=True)
     Chaptername = db.Column(db.String(500), nullable=False)
     Description = db.Column(db.String(500), nullable=False)
+
     QuizR = db.relationship('Quiz', backref='chapter', lazy=True)
     SubjectID = db.Column(db.Integer, db.ForeignKey('subject.SubjectID'), nullable=False)
+    subject = db.relationship('Subject', backref='chapters')  
+
 
 class Quiz(db.Model):
     __tablename__ = 'quiz'
@@ -185,10 +188,136 @@ def user_dashboard():
         return redirect(url_for("home"))
 
     user = User.query.get(session['user_id'])
+
+    # Fetch all subjects
     subjects = Subject.query.all()
+
+    # Fetch all quizzes with associated chapters and subjects
+    upcoming_quizzes = []
+    for subject in subjects:
+        chapters = Chapter.query.filter_by(SubjectID=subject.SubjectID).all()
+        for chapter in chapters:
+            quizzes = Quiz.query.filter_by(ChapterID=chapter.ChapterID).all()
+            for quiz in quizzes:
+                upcoming_quizzes.append({
+                    'quiz': quiz,
+                    'chapter': chapter,
+                    'subject': subject
+                })
+
+    # Fetch past quiz scores
     scores = Score.query.filter_by(UserID=user.UserID).all()
 
-    return render_template("user_dashboard.html", user=user, subjects=subjects, scores=scores)
+    return render_template(
+        "user_dashboard.html",
+        user=user,
+        upcoming_quizzes=upcoming_quizzes,
+        scores=scores
+    )
+
+
+
+
+@app.route('/start_quiz/<int:quiz_id>')
+def start_quiz(quiz_id):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for("home"))
+
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    if not questions:
+        flash("No questions found for this quiz.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    session['quiz_id'] = quiz_id
+    session['current_question'] = 0  # Start with the first question
+    session['user_answers'] = {}  # Store user responses
+
+    return redirect(url_for('next_question'))
+
+@app.route('/next_question', methods=['POST', 'GET'])
+def next_question():
+    if 'quiz_id' not in session:
+        flash("Quiz session expired. Please start again.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    quiz_id = session['quiz_id']
+    current_question_index = session['current_question']
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    # If all questions are answered, redirect to submit
+    if current_question_index >= len(questions):
+        return redirect(url_for("submit_quiz", quiz_id=quiz_id))
+
+    question = questions[current_question_index]
+    total_questions = len(questions)
+    quiz = Quiz.query.get(quiz_id)  # ✅ FIXED: Now passing quiz object
+
+    return render_template(
+        "quiz_attempt.html",
+        quiz=quiz,
+        quiz_id=quiz_id,
+        question=question,
+        current_question=current_question_index + 1,
+        total_questions=total_questions,
+    )
+
+
+@app.route('/save_answer', methods=['POST'])
+def save_answer():
+    if 'quiz_id' not in session:
+        flash("Quiz session expired. Please start again.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    selected_answer = request.form.get("selected_answer")
+    question_id = request.form.get("question_id")
+
+    if question_id and selected_answer:
+        session['user_answers'][question_id] = selected_answer
+
+    session['current_question'] += 1  # Move to the next question
+    return redirect(url_for("next_question"))
+
+
+
+@app.route('/submit_quiz/<int:quiz_id>', methods=['POST'])
+def submit_quiz(quiz_id):
+    if 'user_id' not in session:
+        flash("Please log in to submit the quiz.", "danger")
+        return redirect(url_for('home'))
+
+    user_id = session['user_id']
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    score = 0
+    for question in questions:
+        submitted_answer = session['user_answers'].get(str(question.QuestionID))
+        correct_answer = question.Correct_option
+        if submitted_answer == correct_answer:
+            score += 1  
+
+    total_questions = len(questions)
+    final_score = (score / total_questions) * 100
+
+    new_score = Score(QuizID=quiz_id, UserID=user_id, TotalScore=final_score)
+    db.session.add(new_score)
+    db.session.commit()
+
+    session.pop('quiz_id', None)
+    session.pop('current_question', None)
+    session.pop('user_answers', None)
+
+    flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
+    return redirect(url_for('user_dashboard'))
+
+
+
+
+
+
 
 
 
