@@ -1,0 +1,59 @@
+<!-- templates/_flash_messages.html -->
+<div class="flash-container">
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="flash-message">
+        <strong>{{ message }}</strong>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+</div>
+
+<!-- CSS for Animation & Auto-Dismiss -->
+<style>
+    .flash-container {
+        position: fixed;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        display: flex;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .flash-message {
+        background-color: #28a745;
+        color: white;
+        padding: 12px;
+        border-radius: 8px;
+        font-size: 15px;
+        width: 300px;
+        text-align: center;
+        position: relative;
+        opacity: 0;
+        animation: slideIn 0.5s ease-out forwards, fadeOut 2s ease-in-out forwards 2s;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes fadeOut {
+        80% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+</style>
