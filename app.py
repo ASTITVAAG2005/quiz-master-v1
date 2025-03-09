@@ -16,6 +16,7 @@ app.config['UPLOAD_FOLDER'] = 'static'
 # Initializing the database
 db = SQLAlchemy(app)
 
+# predefined admin details 
 def create_admin():
     with app.app_context():
         admin = User.query.filter_by(Role="admin").first()
@@ -94,7 +95,7 @@ class Score(db.Model):
     user = db.relationship('User', backref='scores')
     quiz = db.relationship('Quiz', backref='scores')
 
-# -------------------------------- Authentication Routes -------------------------------- #
+# -------------------------------- admin authentication ----------------------------------- #
 
 
 
@@ -113,6 +114,9 @@ def adminlogin():
     else:
         flash('Invalid Admin Credentials!', 'danger')
         return redirect(url_for('home'))
+    
+
+# -------------------------------- User login and sign up and logout -------------------------------- #
 
 @app.route('/usersignup', methods=['POST'])
 def usersignup():
@@ -168,6 +172,11 @@ def logout():
     flash("Logged Out Successfully!", "info")
     return redirect(url_for("home"))
 
+
+
+# -------------------------------- Admin and user Dashboard  -------------------------------- #
+
+
 @app.route('/admin_dashboard')
 def admin_dashboard():
     if 'user_id' not in session or session['role'] != 'admin':
@@ -216,110 +225,10 @@ def user_dashboard():
     )
 
 
+# -------------------------------- Admin Functionalities -------------------------------- #
 
 
-@app.route('/start_quiz/<int:quiz_id>')
-def start_quiz(quiz_id):
-    if 'user_id' not in session:
-        flash("Please log in first.", "danger")
-        return redirect(url_for("home"))
-
-    quiz = Quiz.query.get_or_404(quiz_id)
-    questions = Questions.query.filter_by(QuizID=quiz_id).all()
-
-    if not questions:
-        flash("No questions found for this quiz.", "danger")
-        return redirect(url_for("user_dashboard"))
-
-    session['quiz_id'] = quiz_id
-    session['current_question'] = 0  # Start with the first question
-    session['user_answers'] = {}  # Store user responses
-
-    return redirect(url_for('next_question'))
-
-@app.route('/next_question', methods=['POST', 'GET'])
-def next_question():
-    if 'quiz_id' not in session:
-        flash("Quiz session expired. Please start again.", "danger")
-        return redirect(url_for("user_dashboard"))
-
-    quiz_id = session['quiz_id']
-    current_question_index = session['current_question']
-    questions = Questions.query.filter_by(QuizID=quiz_id).all()
-
-    # If all questions are answered, redirect to submit
-    if current_question_index >= len(questions):
-        return redirect(url_for("submit_quiz", quiz_id=quiz_id))
-
-    question = questions[current_question_index]
-    total_questions = len(questions)
-    quiz = Quiz.query.get(quiz_id)  # ✅ FIXED: Now passing quiz object
-
-    return render_template(
-        "quiz_attempt.html",
-        quiz=quiz,
-        quiz_id=quiz_id,
-        question=question,
-        current_question=current_question_index + 1,
-        total_questions=total_questions,
-    )
-
-
-@app.route('/save_answer', methods=['POST'])
-def save_answer():
-    if 'quiz_id' not in session:
-        flash("Quiz session expired. Please start again.", "danger")
-        return redirect(url_for("user_dashboard"))
-
-    selected_answer = request.form.get("selected_answer")
-    question_id = request.form.get("question_id")
-
-    if question_id and selected_answer:
-        session['user_answers'][question_id] = selected_answer
-
-    session['current_question'] += 1  # Move to the next question
-    return redirect(url_for("next_question"))
-
-
-
-@app.route('/submit_quiz/<int:quiz_id>', methods=['POST'])
-def submit_quiz(quiz_id):
-    if 'user_id' not in session:
-        flash("Please log in to submit the quiz.", "danger")
-        return redirect(url_for('home'))
-
-    user_id = session['user_id']
-    quiz = Quiz.query.get_or_404(quiz_id)
-    questions = Questions.query.filter_by(QuizID=quiz_id).all()
-
-    score = 0
-    for question in questions:
-        submitted_answer = session['user_answers'].get(str(question.QuestionID))
-        correct_answer = question.Correct_option
-        if submitted_answer == correct_answer:
-            score += 1  
-
-    total_questions = len(questions)
-    final_score = (score / total_questions) * 100
-
-    new_score = Score(QuizID=quiz_id, UserID=user_id, TotalScore=final_score)
-    db.session.add(new_score)
-    db.session.commit()
-
-    session.pop('quiz_id', None)
-    session.pop('current_question', None)
-    session.pop('user_answers', None)
-
-    flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
-    return redirect(url_for('user_dashboard'))
-
-
-
-
-
-
-
-
+                # CRUD Subject 
 
 @app.route('/add_subject', methods=['POST'])
 def add_subject():
@@ -338,6 +247,41 @@ def add_subject():
     flash("New Subject Added Successfully!", "success")
     return redirect(url_for("admin_dashboard"))
 
+# Edit Subject
+@app.route('/edit_subject/<int:subject_id>', methods=['POST'])
+def edit_subject(subject_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized Access!", "danger")
+        return redirect(url_for("home"))
+
+    subject = Subject.query.get(subject_id)
+    if subject:
+        subject.Subjectname = request.form['subject_name']
+        subject.Description = request.form['description']
+        db.session.commit()
+        flash("Subject Updated Successfully!", "success")
+
+    return redirect(url_for("admin_dashboard"))
+
+# Delete Subject
+@app.route('/delete_subject/<int:subject_id>')
+def delete_subject(subject_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized Access!", "danger")
+        return redirect(url_for("home"))
+
+    subject = Subject.query.get(subject_id)
+    if subject:
+        db.session.delete(subject)
+        db.session.commit()
+        flash("Subject Deleted Successfully!", "success")
+
+    return redirect(url_for("admin_dashboard"))
+
+
+              #CRUD Chapter
+
+
 @app.route('/add_chapter', methods=['POST'])
 def add_chapter():
     if 'user_id' not in session or session['role'] != 'admin':
@@ -355,6 +299,41 @@ def add_chapter():
 
     flash("New Chapter Added Successfully!", "success")
     return redirect(url_for("admin_dashboard"))
+
+
+# Edit Chapter
+@app.route('/edit_chapter/<int:chapter_id>', methods=['POST'])
+def edit_chapter(chapter_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized Access!", "danger")
+        return redirect(url_for("home"))
+
+    chapter = Chapter.query.get(chapter_id)
+    if chapter:
+        chapter.Chaptername = request.form['chapter_name']
+        chapter.Description = request.form['description']
+        db.session.commit()
+        flash("Chapter Updated Successfully!", "success")
+
+    return redirect(url_for("admin_dashboard"))
+
+# Delete Chapter
+@app.route('/delete_chapter/<int:chapter_id>')
+def delete_chapter(chapter_id):
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized Access!", "danger")
+        return redirect(url_for("home"))
+
+    chapter = Chapter.query.get(chapter_id)
+    if chapter:
+        db.session.delete(chapter)
+        db.session.commit()
+        flash("Chapter Deleted Successfully!", "success")
+
+    return redirect(url_for("admin_dashboard"))
+
+
+              # CRUD Quiz 
 
 
 @app.route('/add_quiz', methods=['POST'])
@@ -415,72 +394,7 @@ def delete_quiz(quiz_id):
 
     return redirect(url_for("admin_dashboard"))
 
-
-
-# Edit Subject
-@app.route('/edit_subject/<int:subject_id>', methods=['POST'])
-def edit_subject(subject_id):
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash("Unauthorized Access!", "danger")
-        return redirect(url_for("home"))
-
-    subject = Subject.query.get(subject_id)
-    if subject:
-        subject.Subjectname = request.form['subject_name']
-        subject.Description = request.form['description']
-        db.session.commit()
-        flash("Subject Updated Successfully!", "success")
-
-    return redirect(url_for("admin_dashboard"))
-
-# Delete Subject
-@app.route('/delete_subject/<int:subject_id>')
-def delete_subject(subject_id):
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash("Unauthorized Access!", "danger")
-        return redirect(url_for("home"))
-
-    subject = Subject.query.get(subject_id)
-    if subject:
-        db.session.delete(subject)
-        db.session.commit()
-        flash("Subject Deleted Successfully!", "success")
-
-    return redirect(url_for("admin_dashboard"))
-
-# Edit Chapter
-@app.route('/edit_chapter/<int:chapter_id>', methods=['POST'])
-def edit_chapter(chapter_id):
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash("Unauthorized Access!", "danger")
-        return redirect(url_for("home"))
-
-    chapter = Chapter.query.get(chapter_id)
-    if chapter:
-        chapter.Chaptername = request.form['chapter_name']
-        chapter.Description = request.form['description']
-        db.session.commit()
-        flash("Chapter Updated Successfully!", "success")
-
-    return redirect(url_for("admin_dashboard"))
-
-# Delete Chapter
-@app.route('/delete_chapter/<int:chapter_id>')
-def delete_chapter(chapter_id):
-    if 'user_id' not in session or session['role'] != 'admin':
-        flash("Unauthorized Access!", "danger")
-        return redirect(url_for("home"))
-
-    chapter = Chapter.query.get(chapter_id)
-    if chapter:
-        db.session.delete(chapter)
-        db.session.commit()
-        flash("Chapter Deleted Successfully!", "success")
-
-    return redirect(url_for("admin_dashboard"))
-
-
-# -------------------------------- Question Management Routes -------------------------------- #
+         #CRUD Question 
 
 # Route to Add a New Question
 @app.route('/add_question', methods=['POST'])
@@ -558,6 +472,148 @@ def delete_question(question_id):
         flash("Question Deleted Successfully!", "success")
 
     return redirect(url_for("admin_dashboard"))
+
+# -------------------------------- User Functionalities --------------------------------- #
+
+@app.route('/start_quiz/<int:quiz_id>')
+def start_quiz(quiz_id):
+    if 'user_id' not in session:
+        flash("Please log in first.", "danger")
+        return redirect(url_for("home"))
+
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    if not questions:
+        flash("No questions found for this quiz.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    session['quiz_id'] = quiz_id
+    session['current_question'] = 0  # Start with the first question
+    session['user_answers'] = {}  # Store user responses
+
+    return redirect(url_for('next_question'))
+
+@app.route('/next_question', methods=['POST', 'GET'])
+def next_question():
+    if 'quiz_id' not in session:
+        flash("Quiz session expired. Please start again.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    quiz_id = session['quiz_id']
+    current_question_index = session['current_question']
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    # If all questions are answered, redirect to submit
+    if current_question_index >= len(questions):
+        return redirect(url_for("submit_quiz", quiz_id=quiz_id))
+
+    question = questions[current_question_index]
+    total_questions = len(questions)
+    quiz = Quiz.query.get(quiz_id)  # ✅ FIXED: Now passing quiz object
+
+    return render_template(
+        "quiz_attempt.html",
+        quiz=quiz,
+        quiz_id=quiz_id,
+        question=question,
+        current_question=current_question_index + 1,
+        total_questions=total_questions,
+    )
+
+
+@app.route('/save_answer', methods=['POST'])
+def save_answer():
+    if 'quiz_id' not in session:
+        flash("Quiz session expired. Please start again.", "danger")
+        return redirect(url_for("user_dashboard"))
+
+    selected_answer = request.form.get("selected_answer")
+    question_id = request.form.get("question_id")
+
+    if 'user_answers' not in session:
+        session['user_answers'] = {}
+
+    if question_id and selected_answer:
+        session['user_answers'][str(question_id)] = selected_answer  # Ensure correct data type
+    
+    session.modified = True  # Ensure session updates are saved
+
+    # Move to the next question
+    session['current_question'] += 1
+
+    # **Check if all questions are answered, then submit quiz**
+    quiz_id = session['quiz_id']
+    total_questions = Questions.query.filter_by(QuizID=quiz_id).count()
+
+    if session['current_question'] >= total_questions:
+        return redirect(url_for("submit_quiz", quiz_id=quiz_id))
+
+    return redirect(url_for("next_question"))
+
+
+
+
+
+@app.route('/submit_quiz/<int:quiz_id>', methods=['POST'])
+def submit_quiz(quiz_id):
+    if 'user_id' not in session:
+        flash("Please log in to submit the quiz.", "danger")
+        return redirect(url_for('home'))
+
+    user_id = session['user_id']
+    quiz = Quiz.query.get_or_404(quiz_id)
+    questions = Questions.query.filter_by(QuizID=quiz_id).all()
+
+    # ✅ First, store the last submitted answer
+    last_question_id = request.form.get("question_id")
+    last_answer = request.form.get("selected_answer")
+
+    if 'user_answers' not in session:
+        session['user_answers'] = {}
+
+    if last_question_id and last_answer:
+        session['user_answers'][str(last_question_id)] = last_answer
+
+    session.modified = True  # Ensure session updates
+
+
+    # ✅ Now, calculate the score
+    score = 0
+    for question in questions:
+        submitted_answer = session['user_answers'].get(str(question.QuestionID))
+        correct_answer = question.Correct_option
+
+
+        if submitted_answer == correct_answer:
+            score += 1  
+
+    total_questions = len(questions)
+    final_score = (score / total_questions) * 100
+
+    # ✅ Save score to the database
+    new_score = Score(QuizID=quiz_id, UserID=user_id, TotalScore=final_score)
+    db.session.add(new_score)
+    db.session.commit()
+
+    # ✅ Clear quiz session data
+    session.pop('quiz_id', None)
+    session.pop('current_question', None)
+    session.pop('user_answers', None)
+
+    flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
+    return redirect(url_for('user_dashboard'))
+
+
+
+
+
+
+
+
+
+
+
 
 
 
