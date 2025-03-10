@@ -2,7 +2,7 @@ import os , json
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-
+from sqlalchemy import Text  
 
 
 # Initializing Flask app
@@ -490,6 +490,7 @@ def delete_question(question_id):
     return redirect(url_for("admin_dashboard"))
 
 # -------------------------------- User Functionalities --------------------------------- #
+
 
 
 

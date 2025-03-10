@@ -12,7 +12,13 @@
     {% include '_flash_messages.html' %}
 
 
-
+  <!-- Display Remaining Time -->
+    {% if remaining_time %}
+        <p><strong>Time Remaining:</strong> {{ remaining_time.minutes }} minutes and {{ remaining_time.seconds }} seconds</p>
+        
+        <!-- Auto-refresh every 10 seconds -->
+        <meta http-equiv="refresh" content="10; URL={{ url_for('next_question') }}">
+    {% endif %}
 
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
