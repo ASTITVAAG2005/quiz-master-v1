@@ -2,7 +2,7 @@ import os , json
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from sqlalchemy import Text  
+
 
 
 # Initializing Flask app
