@@ -1,7 +1,9 @@
-import os
+import os , json 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+from sqlalchemy import Text  
+
 
 # Initializing Flask app
 app = Flask(__name__)
@@ -85,6 +87,18 @@ class Questions(db.Model):
     Correct_option = db.Column(db.String(500), nullable=False)
     QuizID = db.Column(db.Integer, db.ForeignKey('quiz.QuizID'), nullable=False)
 
+class UserAnswers(db.Model):
+    __tablename__ = 'user_answers'
+    AnswerID = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    ScoreID = db.Column(db.Integer, db.ForeignKey('score.ScoreID'), nullable=False)  # Links to Score table
+    QuestionID = db.Column(db.Integer, db.ForeignKey('questions.QuestionID'), nullable=False)  # Links to Questions table
+    SelectedAnswer = db.Column(db.String(500), nullable=True)  # Stores the user's selected answer
+
+    # Relationships
+    score = db.relationship('Score', backref='user_answers')
+    question = db.relationship('Questions', backref='user_answers')
+
+
 class Score(db.Model):
     __tablename__ = 'score'
     ScoreID = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -92,8 +106,10 @@ class Score(db.Model):
     UserID = db.Column(db.Integer, db.ForeignKey('user.UserID'), nullable=False)
     TimeStamp = db.Column(db.DateTime, default=db.func.current_timestamp())  # Auto-fills time of attempt
     TotalScore = db.Column(db.Float, nullable=False)
+
     user = db.relationship('User', backref='scores')
     quiz = db.relationship('Quiz', backref='scores')
+
 
 # -------------------------------- admin authentication ----------------------------------- #
 
@@ -475,6 +491,27 @@ def delete_question(question_id):
 
 # -------------------------------- User Functionalities --------------------------------- #
 
+
+
+
+
+@app.route('/user_scores')
+def user_scores():
+    if 'user_id' not in session:
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for("home"))
+
+    user_id = session['user_id']
+    scores = Score.query.filter_by(UserID=user_id).all()
+
+    # Add a flag for retake eligibility
+    for score in scores:
+        score.retake_allowed = score.TotalScore < 40  # Check if score is below 40%
+
+    return render_template("quiz_scores.html", scores=scores)
+
+
+
 @app.route('/start_quiz/<int:quiz_id>')
 def start_quiz(quiz_id):
     if 'user_id' not in session:
@@ -554,7 +591,6 @@ def save_answer():
 
 
 
-
 @app.route('/submit_quiz/<int:quiz_id>', methods=['POST'])
 def submit_quiz(quiz_id):
     if 'user_id' not in session:
@@ -565,7 +601,7 @@ def submit_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     questions = Questions.query.filter_by(QuizID=quiz_id).all()
 
-    # ✅ First, store the last submitted answer
+    # ✅ Ensure last question's answer is saved
     last_question_id = request.form.get("question_id")
     last_answer = request.form.get("selected_answer")
 
@@ -573,17 +609,17 @@ def submit_quiz(quiz_id):
         session['user_answers'] = {}
 
     if last_question_id and last_answer:
-        session['user_answers'][str(last_question_id)] = last_answer
+        session['user_answers'][str(last_question_id)] = last_answer  # ✅ Convert key to string
 
-    session.modified = True  # Ensure session updates
+    session.modified = True  # ✅ Ensure session updates
 
-
-    # ✅ Now, calculate the score
+    # ✅ Now, calculate the score correctly
     score = 0
-    for question in questions:
-        submitted_answer = session['user_answers'].get(str(question.QuestionID))
-        correct_answer = question.Correct_option
 
+    for question in questions:
+        question_id = str(question.QuestionID)  # ✅ Ensure consistent data type
+        submitted_answer = session['user_answers'].get(question_id, None)
+        correct_answer = question.Correct_option
 
         if submitted_answer == correct_answer:
             score += 1  
@@ -591,30 +627,31 @@ def submit_quiz(quiz_id):
     total_questions = len(questions)
     final_score = (score / total_questions) * 100
 
-    # ✅ Save score to the database
+    print(f"DEBUG: User {user_id}, Correct Answers: {score}, Total Questions: {total_questions}, Final Score: {final_score}")
+
+    # ✅ Save score in the database
     new_score = Score(QuizID=quiz_id, UserID=user_id, TotalScore=final_score)
     db.session.add(new_score)
     db.session.commit()
 
-    # ✅ Clear quiz session data
+    # ✅ Store answers in `UserAnswers` table
+    for question_id, selected_answer in session['user_answers'].items():
+        new_answer = UserAnswers(
+            ScoreID=new_score.ScoreID,
+            QuestionID=int(question_id),  # ✅ Convert back to integer
+            SelectedAnswer=selected_answer
+        )
+        db.session.add(new_answer)
+
+    db.session.commit()
+
+    # ✅ Clear session data after submission
     session.pop('quiz_id', None)
     session.pop('current_question', None)
     session.pop('user_answers', None)
 
     flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
     return redirect(url_for('user_dashboard'))
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

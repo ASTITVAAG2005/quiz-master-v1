@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Past Quiz Scores - Quiz Master</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Flash Messages -->
+    {% include '_flash_messages.html' %}
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Quiz Master</a>
+            <a href="{{ url_for('user_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+    </nav>
+
+    <!-- Past Quiz Scores -->
+    <div class="container mt-4">
+        <h5>Your Past Quiz Scores</h5>
+        {% if scores %}
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Quiz</th>
+                    <th>Chapter</th>
+                    <th>Subject</th>
+                    <th>Date</th>
+                    <th>Score</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for score in scores %}
+                <tr>
+                    <td>{{ score.quiz.QuizID }}</td>
+                    <td>{{ score.quiz.chapter.Chaptername }}</td>
+                    <td>{{ score.quiz.chapter.subject.Subjectname }}</td>
+                    <td>{{ score.TimeStamp.date() }}</td>
+                    <td>{{ score.TotalScore }}%</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewAnswers{{ score.ScoreID }}">View Answers</button>
+                        
+                        <!-- ✅ Retake Quiz button only if score < 40 -->
+                        {% if score.TotalScore < 40 %}
+                            <a href="{{ url_for('start_quiz', quiz_id=score.quiz.QuizID) }}" class="btn btn-warning btn-sm">Retake Quiz</a>
+                        {% else %}
+                            <span class="text-success">Passed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+
+                <!-- View Answers Modal -->
+                <div class="modal fade" id="viewAnswers{{ score.ScoreID }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Quiz Answers - {{ score.quiz.QuizID }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                {% for question in score.quiz.QuestionsR %}
+                                    <p><strong>Q:</strong> {{ question.Question_statement }}</p>
+
+                                    <!-- Corrected Jinja Variable Handling -->
+                                    {% set ns = namespace(user_answer="Not Answered") %}
+                                    {% for answer in score.user_answers %}
+                                        {% if answer.QuestionID == question.QuestionID %}
+                                            {% set ns.user_answer = answer.SelectedAnswer %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <p style="color: {% if ns.user_answer == question.Correct_option %}green{% else %}red{% endif %};">
+                                        <strong>Your Answer:</strong> {{ ns.user_answer }}
+                                    </p>
+
+                                    <p><strong>Correct Answer:</strong> {{ question.Correct_option }}</p>
+                                    <hr>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No quiz attempts found.</p>
+        {% endif %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
