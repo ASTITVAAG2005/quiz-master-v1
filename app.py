@@ -494,8 +494,6 @@ def delete_question(question_id):
 
 
 
-
-
 @app.route('/user_scores')
 def user_scores():
     if 'user_id' not in session:
