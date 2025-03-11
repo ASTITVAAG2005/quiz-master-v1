@@ -1,7 +1,7 @@
 import os , json 
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import Text  
 
 
@@ -242,6 +242,7 @@ def user_dashboard():
 
 
 # -------------------------------- Admin Functionalities -------------------------------- #
+
 
 
                 # CRUD Subject 
@@ -649,9 +650,15 @@ def submit_quiz(quiz_id):
     session.pop('current_question', None)
     session.pop('user_answers', None)
 
-    flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
-    return redirect(url_for('user_dashboard'))
 
+
+    flash(f"Quiz submitted! Your score: {final_score:.2f}%", "success")
+    response = redirect(url_for('user_dashboard'))
+    response.set_cookie(f'quiz_timer_{quiz_id}', '', expires=0)  # ✅ Clears the timer
+    return response
+
+
+    return redirect(url_for('user_dashboard'))
 
 
 @app.route("/")
