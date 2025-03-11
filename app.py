@@ -1,5 +1,5 @@
 import os , json 
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash , jsonify
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import Text  
@@ -687,6 +687,73 @@ def submit_quiz(quiz_id):
     return response
 
     return redirect(url_for('user_dashboard'))
+
+
+# -------------------------------- API endpoints  --------------------------------- #
+
+
+# ✅ API: Get all subjects
+@app.route('/api/subjects', methods=['GET'])
+def get_subjects():
+    subjects = Subject.query.all()
+    subjects_data = [
+        {
+            'SubjectID': subject.SubjectID,
+            'Subjectname': subject.Subjectname,
+            'Description': subject.Description
+        } for subject in subjects
+    ]
+    return jsonify({'subjects': subjects_data})
+
+# ✅ API: Get all chapters under a specific subject
+@app.route('/api/chapters/<int:subject_id>', methods=['GET'])
+def get_chapters(subject_id):
+    chapters = Chapter.query.filter_by(SubjectID=subject_id).all()
+    if not chapters:
+        return jsonify({'error': 'No chapters found for this subject'}), 404
+    
+    chapters_data = [
+        {
+            'ChapterID': chapter.ChapterID,
+            'Chaptername': chapter.Chaptername,
+            'Description': chapter.Description
+        } for chapter in chapters
+    ]
+    return jsonify({'chapters': chapters_data})
+
+# ✅ API: Get all quizzes under a specific chapter
+@app.route('/api/quizzes/<int:chapter_id>', methods=['GET'])
+def get_quizzes(chapter_id):
+    quizzes = Quiz.query.filter_by(ChapterID=chapter_id).all()
+    if not quizzes:
+        return jsonify({'error': 'No quizzes found for this chapter'}), 404
+    
+    quizzes_data = [
+        {
+            'QuizID': quiz.QuizID,
+            'ChapterID': quiz.ChapterID,
+            'Date_of_quiz': quiz.Date_of_quiz,
+            'Time_duration': quiz.Time_duration
+        } for quiz in quizzes
+    ]
+    return jsonify({'quizzes': quizzes_data})
+
+# ✅ API: Get a user's quiz scores
+@app.route('/api/scores/<int:user_id>', methods=['GET'])
+def get_scores(user_id):
+    scores = Score.query.filter_by(UserID=user_id).all()
+    if not scores:
+        return jsonify({'error': 'No scores found for this user'}), 404
+    
+    scores_data = [
+        {
+            'ScoreID': score.ScoreID,
+            'QuizID': score.QuizID,
+            'TotalScore': score.TotalScore,
+            'Timestamp': score.TimeStamp.strftime('%Y-%m-%d %H:%M:%S')  # Convert datetime to string
+        } for score in scores
+    ]
+    return jsonify({'scores': scores_data})
 
 
 @app.route("/")
