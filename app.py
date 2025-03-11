@@ -193,18 +193,27 @@ def logout():
 # -------------------------------- Admin and user Dashboard  -------------------------------- #
 
 
-@app.route('/admin_dashboard')
+@app.route('/admin_dashboard', methods=['GET'])
 def admin_dashboard():
     if 'user_id' not in session or session['role'] != 'admin':
-        flash("Unauthorized Access!", "danger")
+        flash("Unauthorized access!", "danger")
         return redirect(url_for("home"))
 
-    users = User.query.all()
-    subjects = Subject.query.all()
-    quizzes = Quiz.query.all()
-    chapters = Chapter.query.all()
+    query = request.args.get('query', '').strip()  # Get search query
+    users, subjects, quizzes, questions = [], [], [], []  # Initialize empty lists
 
-    return render_template("admin_dashboard.html", users=users, subjects=subjects, quizzes=quizzes, chapters=chapters)
+    if query:  # If there's a search query, filter results
+        users = User.query.filter(User.Username.ilike(f"%{query}%")).all()
+        subjects = Subject.query.filter(Subject.Subjectname.ilike(f"%{query}%")).all()
+        quizzes = Quiz.query.filter(Quiz.QuizID.ilike(f"%{query}%")).all()
+        questions = Questions.query.filter(Questions.Question_statement.ilike(f"%{query}%")).all()
+    else:  # If no search, fetch all data
+        users = User.query.all()
+        subjects = Subject.query.all()
+        quizzes = Quiz.query.all()
+        questions = Questions.query.all()
+
+    return render_template("admin_dashboard.html", users=users, subjects=subjects, quizzes=quizzes, questions=questions)
 
 @app.route('/user_dashboard')
 def user_dashboard():
@@ -656,7 +665,6 @@ def submit_quiz(quiz_id):
     response = redirect(url_for('user_dashboard'))
     response.set_cookie(f'quiz_timer_{quiz_id}', '', expires=0)  # ✅ Clears the timer
     return response
-
 
     return redirect(url_for('user_dashboard'))
 

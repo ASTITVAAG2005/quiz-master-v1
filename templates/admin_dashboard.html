@@ -21,6 +21,13 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <!-- Admin Search Bar (Small) -->
+            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="d-flex mb-3">
+                <input type="text" name="query" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request.args.get('query', '') }}">
+                <button type="submit" class="btn btn-sm btn-primary">Search</button>
+            </form>
+
+
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
             </div>
@@ -81,6 +88,61 @@
         {% endif %}
     </div>
 </div>
+
+
+<!-- Search Results Section (Visible Only When Searching) -->
+{% if query %}
+    <h4>Search Results for "{{ query }}"</h4>
+
+    <!-- Users -->
+    {% if user_results %}
+        <h5>Users</h5>
+        <ul class="list-group mb-3">
+            {% for user in user_results %}
+                <li class="list-group-item">
+                    <strong>{{ user.Username }}</strong> ({{ user.Email }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- Subjects -->
+    {% if subject_results %}
+        <h5>Subjects</h5>
+        <ul class="list-group mb-3">
+            {% for subject in subject_results %}
+                <li class="list-group-item">{{ subject.Subjectname }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- Quizzes -->
+    {% if quiz_results %}
+        <h5>Quizzes</h5>
+        <ul class="list-group mb-3">
+            {% for quiz in quiz_results %}
+                <li class="list-group-item">
+                    Quiz ID: {{ quiz.QuizID }} - Chapter: {{ quiz.chapter.Chaptername }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- Questions -->
+    {% if question_results %}
+        <h5>Questions</h5>
+        <ul class="list-group mb-3">
+            {% for question in question_results %}
+                <li class="list-group-item">{{ question.Question_statement }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <!-- No Results -->
+    {% if not user_results and not subject_results and not quiz_results and not question_results %}
+        <p class="text-muted">No results found for "{{ query }}".</p>
+    {% endif %}
+{% endif %}
 
 
 
