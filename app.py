@@ -225,6 +225,7 @@ def user_dashboard():
 
     user = User.query.get(session['user_id'])
     query = request.args.get('query', '').strip().lower()  # ✅ Get search query
+    today = datetime.today().date()  # ✅ Get today's date
 
     # ✅ Fetch all subjects (Filtered if Search Query Exists)
     if query:
@@ -239,10 +240,14 @@ def user_dashboard():
         for chapter in chapters:
             quizzes = Quiz.query.filter_by(ChapterID=chapter.ChapterID).all()
             for quiz in quizzes:
+                quiz_date = quiz.Date_of_quiz  # ✅ Get quiz date
+                is_expired = quiz_date < today  # ✅ Check if quiz date has passed
+
                 upcoming_quizzes.append({
                     'quiz': quiz,
                     'chapter': chapter,
-                    'subject': subject
+                    'subject': subject,
+                    'is_expired': is_expired  # ✅ Pass status to the template
                 })
 
     # ✅ Fetch past quiz scores
@@ -252,9 +257,9 @@ def user_dashboard():
         "user_dashboard.html",
         user=user,
         upcoming_quizzes=upcoming_quizzes,
-        subjects=subjects,  # ✅ Make sure filtered subjects are passed
+        subjects=subjects,  # ✅ Ensure filtered subjects are passed
         scores=scores,
-        query=query  # ✅ Pass query to the template to show what was searched
+        query=query  # ✅ Pass query to the template
     )
 
 
@@ -537,6 +542,13 @@ def start_quiz(quiz_id):
         return redirect(url_for("home"))
 
     quiz = Quiz.query.get_or_404(quiz_id)
+    today = datetime.today().date()  # ✅ Get today's date
+
+    # ✅ Prevent starting quiz if date has passed
+    if quiz.Date_of_quiz < today:
+        flash("This quiz is no longer available.", "danger")
+        return redirect(url_for("user_dashboard"))
+
     questions = Questions.query.filter_by(QuizID=quiz_id).all()
 
     if not questions:
@@ -548,7 +560,6 @@ def start_quiz(quiz_id):
     session['user_answers'] = {}  # Store user responses
 
     return redirect(url_for('next_question'))
-
 @app.route('/next_question', methods=['POST', 'GET'])
 def next_question():
     if 'quiz_id' not in session:

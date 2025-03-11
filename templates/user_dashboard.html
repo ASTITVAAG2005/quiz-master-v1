@@ -21,10 +21,10 @@
             <!-- Search Form (Smaller, Compact) -->
             <div class="container mt-3">
                 <form method="GET" action="{{ url_for('user_dashboard') }}" class="d-flex justify-content-center">
-                    <div class="input-group" style="width: 300px;"> <!-- ✅ Adjusted width -->
+                    <div class="input-group" style="width: 300px;"> 
                         <input type="text" class="form-control form-control-sm" name="query" 
                             placeholder="Search subjects or quizzes..." value="{{ request.args.get('query', '') }}">
-                        <button class="btn btn-sm btn-primary" type="submit">🔍</button> <!-- ✅ Smaller button -->
+                        <button class="btn btn-sm btn-primary" type="submit">🔍</button>
                     </div>
                 </form>
             </div>
@@ -35,7 +35,6 @@
             </div>
         </div>
     </nav>
-
 
     <div class="container mt-4">
         <h5>Subjects</h5>
@@ -80,7 +79,12 @@
                     <td>{{ data.quiz.Time_duration }}</td>
                     <td>
                         <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewQuiz{{ data.quiz.QuizID }}">View</button>
-                        <a href="{{ url_for('start_quiz', quiz_id=data.quiz.QuizID) }}" class="btn btn-success btn-sm">Start</a>
+                        
+                        {% if data.is_expired %}
+                            <span class="badge bg-danger">Expired</span>
+                        {% else %}
+                            <a href="{{ url_for('start_quiz', quiz_id=data.quiz.QuizID) }}" class="btn btn-success btn-sm">Start</a>
+                        {% endif %}
                     </td>
                 </tr>
 
@@ -99,6 +103,9 @@
                                 <p><strong>No. of Questions:</strong> {{ data.quiz.QuestionsR|length }}</p>
                                 <p><strong>Scheduled Date:</strong> {{ data.quiz.Date_of_quiz }}</p>
                                 <p><strong>Duration:</strong> {{ data.quiz.Time_duration }}</p>
+                                {% if data.is_expired %}
+                                    <p class="text-danger"><strong>⚠ This quiz is no longer available.</strong></p>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
