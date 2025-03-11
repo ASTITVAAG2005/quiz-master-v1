@@ -1,10 +1,12 @@
-import os , json 
-from flask import Flask, render_template, request, redirect, url_for, session, flash , jsonify
+import os 
+from flask import Flask, render_template, request, redirect, url_for, session, flash , jsonify ,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta, timezone
-from sqlalchemy import Text  
+from datetime import datetime, timedelta, timezone 
 
 
+import matplotlib
+matplotlib.use('Agg') 
+import matplotlib.pyplot as plt
 # Initializing Flask app
 app = Flask(__name__)
 app.secret_key = "astitva"
@@ -688,6 +690,92 @@ def submit_quiz(quiz_id):
 
     return redirect(url_for('user_dashboard'))
 
+# -------------------------------- Summary Charts --------------------------------- #
+
+
+
+@app.route('/admin_summary')
+def admin_summary():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for("home"))
+
+    generate_admin_summary()
+    return render_template("admin_summary.html")
+
+
+@app.route('/user_summary')
+def user_summary():
+    if 'user_id' not in session or session['role'] != 'user':
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for("home"))
+
+    user_id = session['user_id']
+    generate_user_summary(user_id)
+    return render_template("user_summary.html")
+
+
+
+def generate_admin_summary():
+    users = User.query.all()
+    quizzes = Quiz.query.all()
+    scores = Score.query.all()
+    
+    # User participation chart
+    user_names = [user.Username for user in users]
+    user_scores = [Score.query.filter_by(UserID=user.UserID).count() for user in users]
+    
+    plt.figure(figsize=(8, 5))
+    plt.barh(user_names, user_scores, color='blue')
+    plt.xlabel("Number of Quizzes Taken")
+    plt.ylabel("User Name")
+    plt.title("User Participation in Quizzes")
+    plt.savefig("static/admin_user_participation.png")
+    plt.close()
+    
+    # Quiz statistics chart
+    quiz_names = [quiz.Remarks if quiz.Remarks else f"Quiz {quiz.QuizID}" for quiz in quizzes]
+    quiz_attempts = [Score.query.filter_by(QuizID=quiz.QuizID).count() for quiz in quizzes]
+    
+    plt.figure(figsize=(8, 5))
+    plt.bar(quiz_names, quiz_attempts, color='green')
+    plt.xlabel("Quiz Name")
+    plt.ylabel("Number of Attempts")
+    plt.title("Quiz Attempt Statistics")
+    plt.xticks(rotation=45, ha='right')
+    plt.savefig("static/admin_quiz_statistics.png")
+    plt.close()
+
+
+def generate_user_summary(user_id):
+    scores = Score.query.filter_by(UserID=user_id).all()
+    
+    # Group scores by chapter
+    chapter_scores = {}
+    for score in scores:
+        chapter_name = score.quiz.chapter.Chaptername if score.quiz.chapter else f"Quiz {score.QuizID}"
+        if chapter_name not in chapter_scores:
+            chapter_scores[chapter_name] = []
+        chapter_scores[chapter_name].append((score.TimeStamp, score.TotalScore))
+    
+    plt.figure(figsize=(10, 6))
+    for chapter, data in chapter_scores.items():
+        timestamps, scores = zip(*sorted(data))  # Sort by timestamp
+        plt.plot(timestamps, scores, marker='o', linestyle='-', label=chapter)
+    
+    plt.xlabel("Time")
+    plt.ylabel("Score (%)")
+    plt.title("User Performance Over Time by Chapter")
+    plt.legend(title="Chapters", loc="upper left", bbox_to_anchor=(1,1))
+    plt.xticks(rotation=45, ha='right')
+    plt.grid(True, linestyle="--", alpha=0.6)
+    plt.tight_layout()
+    plt.savefig("static/user_performance_chart.png")
+    plt.close()
+
+@app.route('/serve_chart/<filename>')
+def serve_chart(filename):
+    return send_from_directory("static", filename)
 
 # -------------------------------- API endpoints  --------------------------------- #
 
