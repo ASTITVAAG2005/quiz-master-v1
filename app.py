@@ -192,7 +192,6 @@ def logout():
 
 # -------------------------------- Admin and user Dashboard  -------------------------------- #
 
-
 @app.route('/admin_dashboard', methods=['GET'])
 def admin_dashboard():
     if 'user_id' not in session or session['role'] != 'admin':
@@ -200,20 +199,23 @@ def admin_dashboard():
         return redirect(url_for("home"))
 
     query = request.args.get('query', '').strip()  # Get search query
-    users, subjects, quizzes, questions = [], [], [], []  # Initialize empty lists
+    users, subjects, quizzes, questions, chapters = [], [], [], [], []  # ✅ Initialize empty lists
 
     if query:  # If there's a search query, filter results
         users = User.query.filter(User.Username.ilike(f"%{query}%")).all()
         subjects = Subject.query.filter(Subject.Subjectname.ilike(f"%{query}%")).all()
         quizzes = Quiz.query.filter(Quiz.QuizID.ilike(f"%{query}%")).all()
         questions = Questions.query.filter(Questions.Question_statement.ilike(f"%{query}%")).all()
+        chapters = Chapter.query.filter(Chapter.Chaptername.ilike(f"%{query}%")).all()  # ✅ Add filtered chapters
     else:  # If no search, fetch all data
         users = User.query.all()
         subjects = Subject.query.all()
         quizzes = Quiz.query.all()
         questions = Questions.query.all()
+        chapters = Chapter.query.all()  # ✅ Fetch all chapters
 
-    return render_template("admin_dashboard.html", users=users, subjects=subjects, quizzes=quizzes, questions=questions)
+    return render_template("admin_dashboard.html", users=users, subjects=subjects, quizzes=quizzes, questions=questions, chapters=chapters)
+
 
 @app.route('/user_dashboard')
 def user_dashboard():
@@ -222,11 +224,15 @@ def user_dashboard():
         return redirect(url_for("home"))
 
     user = User.query.get(session['user_id'])
+    query = request.args.get('query', '').strip().lower()  # ✅ Get search query
 
-    # Fetch all subjects
-    subjects = Subject.query.all()
+    # ✅ Fetch all subjects (Filtered if Search Query Exists)
+    if query:
+        subjects = Subject.query.filter(Subject.Subjectname.ilike(f"%{query}%")).all()
+    else:
+        subjects = Subject.query.all()
 
-    # Fetch all quizzes with associated chapters and subjects
+    # ✅ Fetch all quizzes with associated chapters and subjects
     upcoming_quizzes = []
     for subject in subjects:
         chapters = Chapter.query.filter_by(SubjectID=subject.SubjectID).all()
@@ -239,15 +245,18 @@ def user_dashboard():
                     'subject': subject
                 })
 
-    # Fetch past quiz scores
+    # ✅ Fetch past quiz scores
     scores = Score.query.filter_by(UserID=user.UserID).all()
 
     return render_template(
         "user_dashboard.html",
         user=user,
         upcoming_quizzes=upcoming_quizzes,
-        scores=scores
+        subjects=subjects,  # ✅ Make sure filtered subjects are passed
+        scores=scores,
+        query=query  # ✅ Pass query to the template to show what was searched
     )
+
 
 
 # -------------------------------- Admin Functionalities -------------------------------- #

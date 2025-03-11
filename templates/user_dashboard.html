@@ -18,6 +18,17 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
+            <!-- Search Form (Smaller, Compact) -->
+            <div class="container mt-3">
+                <form method="GET" action="{{ url_for('user_dashboard') }}" class="d-flex justify-content-center">
+                    <div class="input-group" style="width: 300px;"> <!-- ✅ Adjusted width -->
+                        <input type="text" class="form-control form-control-sm" name="query" 
+                            placeholder="Search subjects or quizzes..." value="{{ request.args.get('query', '') }}">
+                        <button class="btn btn-sm btn-primary" type="submit">🔍</button> <!-- ✅ Smaller button -->
+                    </div>
+                </form>
+            </div>
+
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
                 <a href="{{ url_for('user_scores') }}" class="btn btn-warning me-3">View Scores</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
@@ -25,6 +36,23 @@
         </div>
     </nav>
 
+
+    <div class="container mt-4">
+        <h5>Subjects</h5>
+        
+        {% if subjects %}
+            <ul class="list-group">
+                {% for subject in subjects %}
+                    <li class="list-group-item">
+                        <strong>{{ subject.Subjectname }}</strong> - {{ subject.Description }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No results found for "{{ query }}".</p>
+        {% endif %}
+    </div>
+    
     <!-- Upcoming Quizzes Section -->
     <div class="container mt-4">
         <h5>Upcoming Quizzes</h5>

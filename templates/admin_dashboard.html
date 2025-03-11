@@ -21,11 +21,16 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <!-- Admin Search Bar (Small) -->
-            <form method="GET" action="{{ url_for('admin_dashboard') }}" class="d-flex mb-3">
-                <input type="text" name="query" class="form-control form-control-sm me-2" placeholder="Search..." value="{{ request.args.get('query', '') }}">
-                <button type="submit" class="btn btn-sm btn-primary">Search</button>
-            </form>
+                <!-- Admin Search Bar (Compact, Centered) -->
+                <div class="container mt-3">
+                    <form method="GET" action="{{ url_for('admin_dashboard') }}" class="d-flex justify-content-center">
+                        <div class="input-group" style="width: 300px;"> <!-- ✅ Adjusted width -->
+                            <input type="text" class="form-control form-control-sm" name="query" 
+                                placeholder="Search users, subjects, quizzes, or questions..." value="{{ request.args.get('query', '') }}">
+                            <button class="btn btn-sm btn-primary" type="submit">🔍</button> <!-- ✅ Smaller button -->
+                        </div>
+                    </form>
+                </div>
 
 
             <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
