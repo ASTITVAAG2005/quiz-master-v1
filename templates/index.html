@@ -27,12 +27,29 @@
     </nav>
 
     
-    <div class="container text-center mt-5">
-        <h1>Welcome to Quiz Master</h1>
-        <p>Your gateway to learning and assessment.</p>
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#userSignupModal">Sign Up as a User</button>
+<div class="container text-center mt-5">
+    <h1>Welcome to Quiz Master</h1>
+    <h6>Dare to challenge your mind? Step in and find out!</h6>
+    
+    <!-- Image Centered -->
+    <div class="d-flex justify-content-center">
+        <img src="{{ url_for('static', filename='Student_exam_cartoon2.jpg') }}" 
+             alt="Student Exam Cartoon" 
+             class="img-fluid mt-3"
+>
+             
     </div>
 
+    <!-- Signup Section -->
+    <div style="margin-top: 60px;">
+        <p style="font-size: 1.2rem; font-weight: bold; color: #333;">
+            New here? No worries! <br> Create an account and start your journey : )
+        </p>
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#userSignupModal">
+            Sign Up as a User
+        </button>
+    </div>
+</div>
     <!-- Admin Login Modal -->
     <div class="modal fade" id="adminLoginModal" tabindex="-1">
         <div class="modal-dialog">

@@ -40,7 +40,7 @@
                     <td>{{ score.quiz.QuizID }}</td>
                     <td>{{ score.quiz.chapter.Chaptername }}</td>
                     <td>{{ score.quiz.chapter.subject.Subjectname }}</td>
-                    <td>{{ score.TimeStamp.date() }}</td>
+                    <td>{{ score.ist_time_str }}</td>
                     <td>{{ score.TotalScore }}%</td>
                     <td>
                         <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewAnswers{{ score.ScoreID }}">View Answers</button>

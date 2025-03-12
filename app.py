@@ -1,12 +1,13 @@
 import os 
 from flask import Flask, render_template, request, redirect, url_for, session, flash , jsonify ,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime, timedelta, timezone 
+from datetime import datetime, timedelta
 
 
 import matplotlib
 matplotlib.use('Agg') 
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 # Initializing Flask app
 app = Flask(__name__)
 app.secret_key = "astitva"
@@ -219,6 +220,8 @@ def admin_dashboard():
     return render_template("admin_dashboard.html", users=users, subjects=subjects, quizzes=quizzes, questions=questions, chapters=chapters)
 
 
+
+
 @app.route('/user_dashboard')
 def user_dashboard():
     if 'user_id' not in session or session['role'] != 'user':
@@ -268,6 +271,20 @@ def user_dashboard():
 
 # -------------------------------- Admin Functionalities -------------------------------- #
 
+@app.route('/user_info', methods=['GET'])
+def user_info():
+    if 'user_id' not in session or session['role'] != 'admin':
+        flash("Unauthorized access!", "danger")
+        return redirect(url_for("home"))
+    query = request.args.get('query', '').strip()  # Get search query
+    users = []
+    
+    if query:  # If there's a search query, filter results
+        users = User.query.filter(User.Username.ilike(f"%{query}%")).all()
+    else:
+        users = User.query.all()
+
+    return render_template("user_info.html",users=users)
 
 
                 # CRUD Subject 
@@ -528,10 +545,14 @@ def user_scores():
 
     user_id = session['user_id']
     scores = Score.query.filter_by(UserID=user_id).all()
+    
 
     # Add a flag for retake eligibility
     for score in scores:
         score.retake_allowed = score.TotalScore < 40  # Check if score is below 40%
+        ist_time = score.TimeStamp + timedelta(hours=5, minutes=30)  # Convert to IST
+        score.ist_time_str = ist_time.strftime('%d-%m-%Y %H:%M:%S')  # Store as new variable
+
 
     return render_template("quiz_scores.html", scores=scores)
 
@@ -704,6 +725,9 @@ def admin_summary():
     return render_template("admin_summary.html")
 
 
+
+
+
 @app.route('/user_summary')
 def user_summary():
     if 'user_id' not in session or session['role'] != 'user':
@@ -747,31 +771,45 @@ def generate_admin_summary():
     plt.close()
 
 
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+from datetime import timedelta
+
 def generate_user_summary(user_id):
     scores = Score.query.filter_by(UserID=user_id).all()
-    
+    IST_OFFSET = timedelta(hours=5, minutes=30)
+
     # Group scores by chapter
     chapter_scores = {}
     for score in scores:
         chapter_name = score.quiz.chapter.Chaptername if score.quiz.chapter else f"Quiz {score.QuizID}"
+        ist_time = score.TimeStamp + IST_OFFSET  # Convert to IST
         if chapter_name not in chapter_scores:
             chapter_scores[chapter_name] = []
-        chapter_scores[chapter_name].append((score.TimeStamp, score.TotalScore))
+        chapter_scores[chapter_name].append((ist_time, score.TotalScore))
     
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(12, 6))
+
     for chapter, data in chapter_scores.items():
         timestamps, scores = zip(*sorted(data))  # Sort by timestamp
         plt.plot(timestamps, scores, marker='o', linestyle='-', label=chapter)
     
-    plt.xlabel("Time")
+    plt.xlabel("Time (IST)")
     plt.ylabel("Score (%)")
     plt.title("User Performance Over Time by Chapter")
     plt.legend(title="Chapters", loc="upper left", bbox_to_anchor=(1,1))
+
+    # Format x-axis to show readable date and time
+    plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d %b %Y, %H:%M'))  # Example: "03 Mar 2025, 14:30"
+    plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())  # Automatically adjust intervals
+
     plt.xticks(rotation=45, ha='right')
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.tight_layout()
+    
     plt.savefig("static/user_performance_chart.png")
     plt.close()
+
 
 @app.route('/serve_chart/<filename>')
 def serve_chart(filename):

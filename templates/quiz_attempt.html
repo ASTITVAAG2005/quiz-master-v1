@@ -101,9 +101,9 @@
         let timerInterval = setInterval(updateTimer, 1000);
     
         document.getElementById("quizForm").addEventListener("submit", function () {
-            {% if current_question == total_questions %}
-                sessionStorage.removeItem(`quiz_timer_${quizId}`);
-            {% endif %}
+             if (current_question == total_questions) {
+                sessionStorage.removeItem(`quiz_timer_${quizId}`)
+        }
         });
     </script>
     

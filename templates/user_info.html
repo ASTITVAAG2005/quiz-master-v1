@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Users Information</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">Quiz Master</a>
+            <!-- Admin Search Bar (Compact, Centered) -->
+            <div class="container mt-3">
+                <form method="GET" action="{{ url_for('user_info') }}" class="d-flex justify-content-center">
+                    <div class="input-group" style="width: 300px;"> <!-- ✅ Adjusted width -->
+                        <input type="text" class="form-control form-control-sm" name="query" 
+                            placeholder="Search users..." value="{{ request.args.get('query', '') }}">
+                        <button class="btn btn-sm btn-primary" type="submit">🔍</button> <!-- ✅ Smaller button -->
+                    </div>
+                </form>
+            </div>
+            <div class="ms-auto">
+                <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary">Back to Dashboard</a>
+            </div>
+        </div>
+    </nav>
+<!-- Search Results Section (Visible Only When Searching) -->
+{% if query %}
+    <h4>Search Results for "{{ query }}"</h4>
+
+    <!-- Users -->
+    {% if user_results %}
+        <h5>Users</h5>
+        <ul class="list-group mb-3">
+            {% for user in user_results %}
+                <li class="list-group-item">
+                    <strong>{{ user.Username }}</strong> ({{ user.Email }})
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <!-- No Results -->
+    {% if not user_results  %}
+        <p class="text-muted">No results found for "{{ query }}".</p>
+    {% endif %}
+{% endif %}
+
+    <!-- Manage Users -->
+    <div class="container mt-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Registered Users</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Qualification</th>
+                                <th>Role</th>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.Username }}</td>
+                                <td>{{ user.Email }}</td>
+                                <td>{{user.Qualification}}</td>
+                                <td>{{ user.Role }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No registered users.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

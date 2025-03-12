@@ -77,13 +77,13 @@
                     <td>{{ data.subject.Subjectname }}</td>
                     <td>{{ data.chapter.Chaptername }}</td>
                     <td>{{ data.quiz.QuestionsR|length }}</td>
-                    <td>{{ data.quiz.Date_of_quiz }}</td>
+                    <td>{{ data.quiz.Date_of_quiz.strftime('%d-%m-%Y') }}</td>
                     <td>{{ data.quiz.Time_duration }}</td>
                     <td>
                         <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewQuiz{{ data.quiz.QuizID }}">View</button>
                         
                         {% if data.is_expired %}
-                            <span class="badge bg-danger">Expired</span>
+                            <span class="badge bg-danger">Due Date has passed</span>
                         {% else %}
                             <a href="{{ url_for('start_quiz', quiz_id=data.quiz.QuizID) }}" class="btn btn-success btn-sm">Start</a>
                         {% endif %}
