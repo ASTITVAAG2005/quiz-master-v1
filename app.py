@@ -2,6 +2,7 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, session, flash , jsonify ,send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
+from sqlalchemy.exc import IntegrityError
 
 import matplotlib
 matplotlib.use('Agg') 
@@ -307,12 +308,15 @@ def delete_subject(subject_id):
 
     subject = Subject.query.get(subject_id)
     if subject:
-        db.session.delete(subject)
-        db.session.commit()
-        flash("Subject Deleted Successfully!", "success")
+        try:
+            db.session.delete(subject)
+            db.session.commit()
+            flash("Subject Deleted Successfully!", "success")
+        except IntegrityError:
+            db.session.rollback()
+            flash("Cannot delete! Remove related chapters or quizzes first.", "danger")
 
     return redirect(url_for("admin_dashboard"))
-
 
               #CRUD Chapter
 
@@ -360,9 +364,13 @@ def delete_chapter(chapter_id):
 
     chapter = Chapter.query.get(chapter_id)
     if chapter:
-        db.session.delete(chapter)
-        db.session.commit()
-        flash("Chapter Deleted Successfully!", "success")
+        try:
+            db.session.delete(chapter)
+            db.session.commit()
+            flash("Chapter Deleted Successfully!", "success")
+        except IntegrityError:
+            db.session.rollback()
+            flash("Cannot delete! Remove related quizzes or questions first.", "danger")
 
     return redirect(url_for("admin_dashboard"))
 
@@ -400,13 +408,14 @@ def edit_quiz(quiz_id):
     if quiz:
         quiz.Date_of_quiz = datetime.strptime(request.form['date_of_quiz'], "%Y-%m-%d").date()
         quiz.Time_duration = request.form['time_duration']
-        quiz.Remarks = request.form['remarks']
+        #quiz.Remarks = request.form['remarks']
         db.session.commit()
         flash("Quiz Updated Successfully!", "success")
     else:
         flash("Quiz Not Found!", "danger")
 
     return redirect(url_for("admin_dashboard"))
+
 
 
 @app.route('/delete_quiz/<int:quiz_id>', methods=['GET'])
@@ -416,10 +425,20 @@ def delete_quiz(quiz_id):
         return redirect(url_for("home"))
 
     quiz = Quiz.query.get(quiz_id)
+
     if quiz:
-        db.session.delete(quiz)
-        db.session.commit()
-        flash("Quiz Deleted Successfully!", "success")
+        try:
+            UserAnswers.query.filter(UserAnswers.QuestionID.in_(db.session.query(Questions.QuestionID).filter_by(QuizID=quiz_id))).delete(synchronize_session=False)
+            Questions.query.filter_by(QuizID=quiz_id).delete()
+            Score.query.filter_by(QuizID=quiz_id).delete()
+            db.session.delete(quiz)
+            db.session.commit()
+
+            flash("Quiz Deleted Successfully!", "success")
+
+        except IntegrityError:
+            db.session.rollback()
+            flash("Cannot delete! Remove related data first.", "danger")
     else:
         flash("Quiz Not Found!", "danger")
 
@@ -484,14 +503,17 @@ def delete_question(question_id):
         return redirect(url_for("home"))
 
     question = Questions.query.get(question_id)
+    
     if not question:
         flash("Question not found!", "danger")
     else:
+        UserAnswers.query.filter_by(QuestionID=question_id).delete()
         db.session.delete(question)
         db.session.commit()
         flash("Question Deleted Successfully!", "success")
 
     return redirect(url_for("admin_dashboard"))
+
 
 
 # -------------------------------- User Functionalities --------------------------------- #

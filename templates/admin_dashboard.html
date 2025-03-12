@@ -163,8 +163,7 @@
         <ul class="list-group">
             {% for chapter in chapters %}
             <li class="list-group-item">
-                <strong>{{ chapter.Chaptername }}</strong> - {{ chapter.Description }}
-                
+                <strong>{{ chapter.subject.Subjectname }}</strong> --> {{ chapter.Chaptername }} - {{ chapter.Description }}
                 <!-- Edit Button to trigger modal -->
                 <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editChapterModal{{ chapter.ChapterID }}">Edit</button>
                 
@@ -250,7 +249,7 @@
         <ul class="list-group">
             {% for quiz in quizzes %}
             <li class="list-group-item">
-                <strong>{{ quiz.chapter.Chaptername }}</strong> - Date: {{ quiz.Date_of_quiz }} | Duration: {{ quiz.Time_duration }}
+                <strong>{{ quiz.chapter.subject.Subjectname }}</strong> --> <strong>{{ quiz.chapter.Chaptername }}</strong> - Date:  {{ quiz.Date_of_quiz.strftime('%d-%m-%Y') }} | Duration: {{ quiz.Time_duration }}
                 
                 <!-- Edit Button to trigger modal -->
                 <button class="btn btn-warning btn-sm float-end mx-1" data-bs-toggle="modal" data-bs-target="#editQuizModal{{ quiz.QuizID }}">Edit</button>
@@ -350,7 +349,7 @@
         </div>
     </div>
 
-    <!-- Manage Questions -->
+   <!-- Manage Questions -->
 <div class="card mt-3">
     <div class="card-header bg-info text-dark fw-bold">
         Manage Questions
@@ -359,7 +358,11 @@
     <div class="card-body">
         {% if quizzes %}
             {% for quiz in quizzes %}
-                <h5>{{ quiz.chapter.Chaptername }} - {{ quiz.Date_of_quiz }}</h5>
+            <p>
+                <strong>{{ quiz.chapter.subject.Subjectname }} --> {{ quiz.chapter.Chaptername }}</strong> - 
+                {{ quiz.Date_of_quiz.strftime('%d-%m-%Y') }}
+            </p>
+            
                 <ul class="list-group">
                     {% for question in quiz.QuestionsR %}
                         <li class="list-group-item">
@@ -401,10 +404,10 @@
                                             <div class="mb-3">
                                                 <label class="form-label">Correct Option</label>
                                                 <select class="form-control" name="correct_option">
-                                                    <option value="{{ question.Option1 }}">{{ question.Option1 }}</option>
-                                                    <option value="{{ question.Option2 }}">{{ question.Option2 }}</option>
-                                                    <option value="{{ question.Option3 }}">{{ question.Option3 }}</option>
-                                                    <option value="{{ question.Option4 }}">{{ question.Option4 }}</option>
+                                                    <option value="1" {% if question.Correct_option == question.Option1 %}selected{% endif %}>Option 1</option>
+                                                    <option value="2" {% if question.Correct_option == question.Option2 %}selected{% endif %}>Option 2</option>
+                                                    <option value="3" {% if question.Correct_option == question.Option3 %}selected{% endif %}>Option 3</option>
+                                                    <option value="4" {% if question.Correct_option == question.Option4 %}selected{% endif %}>Option 4</option>
                                                 </select>
                                             </div>
                                             <button type="submit" class="btn btn-warning">Update Question</button>
@@ -421,7 +424,6 @@
         {% endif %}
     </div>
 </div>
-
 <!-- Add Question Modal -->
 <div class="container mb-5">
 
@@ -438,7 +440,7 @@
                         <label class="form-label">Select Quiz</label>
                         <select class="form-control" name="quiz_id" required>
                             {% for quiz in quizzes %}
-                            <option value="{{ quiz.QuizID }}">{{ quiz.chapter.Chaptername }} - {{ quiz.Date_of_quiz }}</option>
+                            <option value="{{ quiz.QuizID }}">{{ quiz.chapter.Chaptername }} - {{ quiz.Date_of_quiz.strftime('%d-%m-%Y') }}</option>
                             {% endfor %}
                         </select>
                     </div>

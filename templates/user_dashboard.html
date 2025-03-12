@@ -56,7 +56,7 @@
     
     <!-- Upcoming Quizzes Section -->
     <div class="container mt-4">
-        <h5>Upcoming Quizzes</h5>
+        <h5>Quizzes</h5>
         {% if upcoming_quizzes %}
         <table class="table table-striped">
             <thead>
@@ -83,7 +83,7 @@
                         <button class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#viewQuiz{{ data.quiz.QuizID }}">View</button>
                         
                         {% if data.is_expired %}
-                            <span class="badge bg-danger">Due Date has passed</span>
+                            <span class="badge bg-danger">Deadline passed</span>
                         {% else %}
                             <a href="{{ url_for('start_quiz', quiz_id=data.quiz.QuizID) }}" class="btn btn-success btn-sm">Start</a>
                         {% endif %}
