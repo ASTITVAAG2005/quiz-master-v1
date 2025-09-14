@@ -88,12 +88,14 @@ The system ensures secure access, real-time feedback, and insightful analytics f
 
 ---
 
-## 📸 Screenshots
 
-<div align="center">
-<img src="static/admin_dashboard.html" alt="Admin Dashboard" width="400"/>
-<img src="static/user_dashboard.html" alt="User Dashboard" width="400"/>
-</div>
+## 🎥 Video Demonstration
+
+Watch the full demonstration video here: [Quiz Master Demo Video](https://drive.google.com/file/d/1_bpgExCgXbCF99s3IpkwAH2EgjVRhacA/view)
+
+## 🌐 Deployment
+
+Access the live application: [Quiz Master on Render](https://quiz-master-v1-x1at.onrender.com/)
 
 ---
 
